@@ -1,2 +1,1 @@
-[node_reqs]
-ComfyUI-Env-Manager = "PozzettiAndrea/ComfyUI-Env-Manager"
+# Legacy bootstrap manifest retired by pyisolate conda_support conversion.

@@ -1,9 +1,6 @@
-comfy-env == 0.2.39
 requests
 openmeteo-requests
 matplotlib
 xarray
-cfgrib
-eccodes
 earth2studio
 huggingface_hub

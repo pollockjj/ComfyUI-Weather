@@ -1,2 +1,1 @@
-from comfy_env import install
-install()
+"""Legacy installer entrypoint intentionally left inert for isolation mode."""

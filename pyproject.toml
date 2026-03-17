@@ -3,6 +3,14 @@ name = "comfyui-weather"
 description = "Weather data nodes for ComfyUI. Fetch forecasts from Open-Meteo and Jua.ai, run ML weather predictions (FourCastNet, GraphCast, Aurora), visualize and process weather data."
 version = "0.1.0"
 license = {text = "MIT"}
+dependencies = [
+  "requests",
+  "openmeteo-requests",
+  "matplotlib",
+  "xarray",
+  "earth2studio",
+  "huggingface_hub",
+]
 
 [project.urls]
 Repository = "https://github.com/PozzettiAndrea/ComfyUI-Weather"
@@ -11,3 +19,11 @@ Repository = "https://github.com/PozzettiAndrea/ComfyUI-Weather"
 PublisherId = "pznodes"
 DisplayName = "ComfyUI-Weather"
 Icon = ""
+
+[tool.comfy.isolation]
+can_isolate = true
+package_manager = "conda"
+execution_model = "sealed_worker"
+share_torch = false
+conda_channels = ["conda-forge"]
+conda_dependencies = ["eccodes", "cfgrib"]
