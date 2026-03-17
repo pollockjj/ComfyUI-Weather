@@ -1,9 +1,6 @@
-import os
-
 from comfy_api.latest import io
 
-from . import fetch_openmeteo
-from . import fetch_jua
+from . import runtime_secrets
 
 
 class SetOpenMeteoAPIKey(io.ComfyNode):
@@ -35,13 +32,11 @@ class SetOpenMeteoAPIKey(io.ComfyNode):
     def execute(cls, api_key):
         key = api_key.strip()
         if key:
-            fetch_openmeteo._api_key = key
-            os.environ["OPEN_METEO_API_KEY"] = key
+            runtime_secrets.set_open_meteo_key(key)
             info = f"API key set ({key[:4]}...{key[-4:]}). Using customer API endpoint."
             print(f"[Weather] Open-Meteo API key configured")
         else:
-            fetch_openmeteo._api_key = None
-            os.environ.pop("OPEN_METEO_API_KEY", None)
+            runtime_secrets.set_open_meteo_key(None)
             info = "No API key set. Using free tier."
             print(f"[Weather] Open-Meteo API key cleared (free tier)")
 
@@ -77,13 +72,11 @@ class SetJuaAPIKey(io.ComfyNode):
     def execute(cls, api_key):
         key = api_key.strip()
         if key:
-            fetch_jua._api_key = key
-            os.environ["JUA_API_KEY"] = key
+            runtime_secrets.set_jua_key(key)
             info = f"Jua API key set ({key[:4]}...{key[-4:]})."
             print(f"[Weather] Jua API key configured")
         else:
-            fetch_jua._api_key = None
-            os.environ.pop("JUA_API_KEY", None)
+            runtime_secrets.set_jua_key(None)
             info = "No Jua API key set."
             print(f"[Weather] Jua API key cleared")
 

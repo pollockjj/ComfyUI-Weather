@@ -1,5 +1,4 @@
 import json
-import os
 import time
 from datetime import datetime, timezone
 
@@ -7,6 +6,7 @@ import numpy as np
 import openmeteo_requests
 import comfy.model_management
 from comfy_api.latest import io
+from . import runtime_secrets
 
 WEATHER_DATA = io.Custom("WEATHER_DATA")
 WEATHER_GRID = io.Custom("WEATHER_GRID")
@@ -95,21 +95,17 @@ VAR_META = {
 # Shared SDK client
 _client = openmeteo_requests.Client()
 
-# API key for Open-Meteo (set via SetOpenMeteoAPIKey node or OPEN_METEO_API_KEY env var)
-_api_key = os.environ.get("OPEN_METEO_API_KEY") or None
-
-
-def _get_api_url():
+def _get_api_url(api_key):
     """Return the appropriate API URL based on whether an API key is set."""
-    if _api_key:
+    if api_key:
         return "https://customer-api.open-meteo.com/v1/forecast"
     return API_URL
 
 
-def _api_params(params):
+def _api_params(params, api_key):
     """Add API key to params if set."""
-    if _api_key:
-        params["apikey"] = _api_key
+    if api_key:
+        params["apikey"] = api_key
     return params
 
 
@@ -166,6 +162,7 @@ def _response_to_timestamps(hourly):
 
 
 def _fetch_latlon_single(latitude, longitude, model_key, model_api_value,
+                         api_key,
                          variables, forecast_hours):
     """Fetch single-point time-series for one model using SDK (FlatBuffers)."""
     params = {
@@ -177,7 +174,7 @@ def _fetch_latlon_single(latitude, longitude, model_key, model_api_value,
     if model_api_value:
         params["models"] = model_api_value
 
-    responses = _fetch_with_retry(_get_api_url(), _api_params(params))
+    responses = _fetch_with_retry(_get_api_url(api_key), _api_params(params, api_key))
     r = responses[0]
 
     hourly = r.Hourly()
@@ -286,6 +283,7 @@ class FetchWeatherForecast(io.ComfyNode):
 
     @classmethod
     def _execute_latlon(cls, backend, selected_models):
+        api_key = runtime_secrets.get_open_meteo_key()
         coords = backend["latlon_coords"]
         points = coords.get("points", [])
         # Backward compat: old format had latitude/longitude directly
@@ -321,6 +319,7 @@ class FetchWeatherForecast(io.ComfyNode):
             for model_key, model_api_value in selected_models:
                 result = _fetch_latlon_single(
                     latitude, longitude, model_key, model_api_value,
+                    api_key,
                     variables, forecast_hours,
                 )
                 model_results[model_key] = result
@@ -354,6 +353,7 @@ class FetchWeatherForecast(io.ComfyNode):
 
     @classmethod
     def _execute_grid(cls, backend, selected_models):
+        api_key = runtime_secrets.get_open_meteo_key()
         coords = backend["grid_coords"]
         lat_south = coords["lat_south"]
         lon_west = coords["lon_west"]
@@ -394,6 +394,7 @@ class FetchWeatherForecast(io.ComfyNode):
             comfy.model_management.throw_exception_if_processing_interrupted()
             grid_result = cls._fetch_single_model_grid(
                 variables, model_key, model_api_value,
+                api_key,
                 lat_south, lon_west, lat_north, lon_east,
                 forecast_hours,
             )
@@ -442,6 +443,7 @@ class FetchWeatherForecast(io.ComfyNode):
 
     @classmethod
     def _fetch_single_model_grid(cls, variables, model_key, model_api_value,
+                                  api_key,
                                   lat_south, lon_west, lat_north, lon_east,
                                   forecast_hours):
         """Fetch grid data for a single model, multiple variables.
@@ -499,7 +501,7 @@ class FetchWeatherForecast(io.ComfyNode):
                 "bounding_box": bbox_str,
             }
 
-            responses = _fetch_with_retry(_get_api_url(), _api_params(params))
+            responses = _fetch_with_retry(_get_api_url(api_key), _api_params(params, api_key))
             print(f"[Weather] Tile {ti+1}/{len(tiles)}: {len(responses)} points")
 
             for i, r in enumerate(responses):

@@ -1,11 +1,11 @@
 import json
-import os
 import requests
 import numpy as np
 from datetime import datetime, timedelta, timezone
 
 import comfy.model_management
 from comfy_api.latest import io
+from . import runtime_secrets
 
 WEATHER_DATA = io.Custom("WEATHER_DATA")
 WEATHER_GRID = io.Custom("WEATHER_GRID")
@@ -36,22 +36,14 @@ JUA_VAR_META = {
 # Jua grid resolution (~0.081° ≈ 9km)
 JUA_GRID_RESOLUTION = 0.081
 
-# API key for Jua (set via env var or node input)
-_api_key = os.environ.get("JUA_API_KEY") or None
-
 # API endpoints
 JUA_POINT_URL = "https://query.jua.ai/v1/forecast/"
 JUA_GRID_URL = "https://query.jua.ai/v1/forecast/data"
 
 
 def _resolve_api_key(api_key_input):
-    """Resolve API key from node input or env var."""
-    key = api_key_input.strip() if api_key_input else ""
-    if not key:
-        key = _api_key or ""
-    if not key or ":" not in key:
-        raise ValueError("API key must be in format 'key_id:key_secret'. Get one at https://developer.jua.ai/")
-    return key
+    """Resolve API key from node input, runtime key node, or allowlisted env var."""
+    return runtime_secrets.resolve_jua_key(api_key_input)
 
 
 def _parse_selected_models(models_json):
