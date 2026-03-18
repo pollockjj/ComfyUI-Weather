@@ -3,9 +3,9 @@ import requests
 import numpy as np
 from datetime import datetime, timedelta, timezone
 
-import comfy.model_management
 from comfy_api.latest import io
 from . import runtime_secrets
+from ._interrupt import throw_if_interrupted
 
 WEATHER_DATA = io.Custom("WEATHER_DATA")
 WEATHER_GRID = io.Custom("WEATHER_GRID")
@@ -181,7 +181,7 @@ class FetchJuaForecast(io.ComfyNode):
         info_lines = []
 
         for pi, pt in enumerate(points):
-            comfy.model_management.throw_exception_if_processing_interrupted()
+            throw_if_interrupted()
             latitude = pt["latitude"]
             longitude = pt["longitude"]
             print(f"[Weather] Location {pi+1}/{len(points)}: ({latitude:.4f}, {longitude:.4f})")
@@ -244,7 +244,7 @@ class FetchJuaForecast(io.ComfyNode):
         init_time = None
 
         for model_key, model_api_value in selected_models:
-            comfy.model_management.throw_exception_if_processing_interrupted()
+            throw_if_interrupted()
 
             for variable in variables:
                 grid_result = cls._fetch_grid_single(

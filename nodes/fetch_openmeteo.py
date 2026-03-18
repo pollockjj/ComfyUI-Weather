@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 
 import numpy as np
 import openmeteo_requests
-import comfy.model_management
 from comfy_api.latest import io
 from . import runtime_secrets
+from ._interrupt import throw_if_interrupted
 
 WEATHER_DATA = io.Custom("WEATHER_DATA")
 WEATHER_GRID = io.Custom("WEATHER_GRID")
@@ -112,7 +112,7 @@ def _api_params(params, api_key):
 def _fetch_with_retry(url, params, method="GET", max_retries=3):
     """Fetch from Open-Meteo with retry on rate limit."""
     for attempt in range(max_retries):
-        comfy.model_management.throw_exception_if_processing_interrupted()
+        throw_if_interrupted()
         try:
             if method == "POST":
                 return _client.weather_api(url, params=params, method="POST")
@@ -124,7 +124,7 @@ def _fetch_with_retry(url, params, method="GET", max_retries=3):
                     print(f"[Weather] Rate limited, waiting {wait}s (attempt {attempt+1}/{max_retries})...")
                     # Sleep in 1s increments to allow interrupt checks
                     for _ in range(wait):
-                        comfy.model_management.throw_exception_if_processing_interrupted()
+                        throw_if_interrupted()
                         time.sleep(1)
                     continue
             raise
@@ -310,7 +310,7 @@ class FetchWeatherForecast(io.ComfyNode):
         info_lines = []
 
         for pi, pt in enumerate(points):
-            comfy.model_management.throw_exception_if_processing_interrupted()
+            throw_if_interrupted()
             latitude = pt["latitude"]
             longitude = pt["longitude"]
             print(f"[Weather] Location {pi+1}/{len(points)}: ({latitude:.4f}, {longitude:.4f})")
@@ -391,7 +391,7 @@ class FetchWeatherForecast(io.ComfyNode):
         ]
 
         for model_key, model_api_value in resolved_models:
-            comfy.model_management.throw_exception_if_processing_interrupted()
+            throw_if_interrupted()
             grid_result = cls._fetch_single_model_grid(
                 variables, model_key, model_api_value,
                 api_key,
@@ -490,7 +490,7 @@ class FetchWeatherForecast(io.ComfyNode):
         timestamps = None
 
         for ti, (ts, lw, tn, le) in enumerate(tiles):
-            comfy.model_management.throw_exception_if_processing_interrupted()
+            throw_if_interrupted()
             bbox_str = f"{ts},{lw},{tn},{le}"
             params = {
                 "latitude": (ts + tn) / 2,

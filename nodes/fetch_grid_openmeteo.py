@@ -1,7 +1,7 @@
 import requests
 import numpy as np
-import comfy.model_management
 from comfy_api.latest import io
+from ._interrupt import throw_if_interrupted
 
 WEATHER_GRID = io.Custom("WEATHER_GRID")
 
@@ -192,7 +192,7 @@ class FetchGridForecast(io.ComfyNode):
         all_returned_lons = []
 
         for i in range(0, len(lat_list), batch_size):
-            comfy.model_management.throw_exception_if_processing_interrupted()
+            throw_if_interrupted()
             batch_lats = lat_list[i:i + batch_size]
             batch_lons = lon_list[i:i + batch_size]
 
